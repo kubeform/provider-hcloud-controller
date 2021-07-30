@@ -27,8 +27,8 @@ import (
 	"sync"
 	"time"
 
-	hcloud "github.com/equinix/terraform-provider-metal/metal"
 	"github.com/gobuffalo/flect"
+	hcloud "github.com/hetznercloud/terraform-provider-hcloud/hcloud"
 	auditlib "go.bytebuilders.dev/audit/lib"
 	arv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -39,35 +39,29 @@ import (
 	admissionregistrationv1 "k8s.io/client-go/kubernetes/typed/admissionregistration/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
-	bgpv1alpha1 "kubeform.dev/provider-hcloud-api/apis/bgp/v1alpha1"
-	connectionv1alpha1 "kubeform.dev/provider-hcloud-api/apis/connection/v1alpha1"
-	devicev1alpha1 "kubeform.dev/provider-hcloud-api/apis/device/v1alpha1"
-	gatewayv1alpha1 "kubeform.dev/provider-hcloud-api/apis/gateway/v1alpha1"
-	ipv1alpha1 "kubeform.dev/provider-hcloud-api/apis/ip/v1alpha1"
-	organizationv1alpha1 "kubeform.dev/provider-hcloud-api/apis/organization/v1alpha1"
-	portv1alpha1 "kubeform.dev/provider-hcloud-api/apis/port/v1alpha1"
-	projectv1alpha1 "kubeform.dev/provider-hcloud-api/apis/project/v1alpha1"
-	reservedv1alpha1 "kubeform.dev/provider-hcloud-api/apis/reserved/v1alpha1"
-	spotv1alpha1 "kubeform.dev/provider-hcloud-api/apis/spot/v1alpha1"
+	certificatev1alpha1 "kubeform.dev/provider-hcloud-api/apis/certificate/v1alpha1"
+	firewallv1alpha1 "kubeform.dev/provider-hcloud-api/apis/firewall/v1alpha1"
+	floatingv1alpha1 "kubeform.dev/provider-hcloud-api/apis/floating/v1alpha1"
+	loadv1alpha1 "kubeform.dev/provider-hcloud-api/apis/load/v1alpha1"
+	managedv1alpha1 "kubeform.dev/provider-hcloud-api/apis/managed/v1alpha1"
+	networkv1alpha1 "kubeform.dev/provider-hcloud-api/apis/network/v1alpha1"
+	rdnsv1alpha1 "kubeform.dev/provider-hcloud-api/apis/rdns/v1alpha1"
+	serverv1alpha1 "kubeform.dev/provider-hcloud-api/apis/server/v1alpha1"
+	snapshotv1alpha1 "kubeform.dev/provider-hcloud-api/apis/snapshot/v1alpha1"
 	sshv1alpha1 "kubeform.dev/provider-hcloud-api/apis/ssh/v1alpha1"
-	userv1alpha1 "kubeform.dev/provider-hcloud-api/apis/user/v1alpha1"
-	virtualv1alpha1 "kubeform.dev/provider-hcloud-api/apis/virtual/v1alpha1"
-	vlanv1alpha1 "kubeform.dev/provider-hcloud-api/apis/vlan/v1alpha1"
+	uploadedv1alpha1 "kubeform.dev/provider-hcloud-api/apis/uploaded/v1alpha1"
 	volumev1alpha1 "kubeform.dev/provider-hcloud-api/apis/volume/v1alpha1"
-	controllersbgp "kubeform.dev/provider-hcloud-controller/controllers/bgp"
-	controllersconnection "kubeform.dev/provider-hcloud-controller/controllers/connection"
-	controllersdevice "kubeform.dev/provider-hcloud-controller/controllers/device"
-	controllersgateway "kubeform.dev/provider-hcloud-controller/controllers/gateway"
-	controllersip "kubeform.dev/provider-hcloud-controller/controllers/ip"
-	controllersorganization "kubeform.dev/provider-hcloud-controller/controllers/organization"
-	controllersport "kubeform.dev/provider-hcloud-controller/controllers/port"
-	controllersproject "kubeform.dev/provider-hcloud-controller/controllers/project"
-	controllersreserved "kubeform.dev/provider-hcloud-controller/controllers/reserved"
-	controllersspot "kubeform.dev/provider-hcloud-controller/controllers/spot"
+	controllerscertificate "kubeform.dev/provider-hcloud-controller/controllers/certificate"
+	controllersfirewall "kubeform.dev/provider-hcloud-controller/controllers/firewall"
+	controllersfloating "kubeform.dev/provider-hcloud-controller/controllers/floating"
+	controllersload "kubeform.dev/provider-hcloud-controller/controllers/load"
+	controllersmanaged "kubeform.dev/provider-hcloud-controller/controllers/managed"
+	controllersnetwork "kubeform.dev/provider-hcloud-controller/controllers/network"
+	controllersrdns "kubeform.dev/provider-hcloud-controller/controllers/rdns"
+	controllersserver "kubeform.dev/provider-hcloud-controller/controllers/server"
+	controllerssnapshot "kubeform.dev/provider-hcloud-controller/controllers/snapshot"
 	controllersssh "kubeform.dev/provider-hcloud-controller/controllers/ssh"
-	controllersuser "kubeform.dev/provider-hcloud-controller/controllers/user"
-	controllersvirtual "kubeform.dev/provider-hcloud-controller/controllers/virtual"
-	controllersvlan "kubeform.dev/provider-hcloud-controller/controllers/vlan"
+	controllersuploaded "kubeform.dev/provider-hcloud-controller/controllers/uploaded"
 	controllersvolume "kubeform.dev/provider-hcloud-controller/controllers/volume"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -253,237 +247,291 @@ func updateVWC(vwcClient *admissionregistrationv1.AdmissionregistrationV1Client,
 func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVersionKind, auditor *auditlib.EventPublisher, watchOnlyDefault bool) error {
 	switch gvk {
 	case schema.GroupVersionKind{
-		Group:   "bgp.hcloud.kubeform.com",
+		Group:   "certificate.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "Session",
+		Kind:    "Certificate",
 	}:
-		if err := (&controllersbgp.SessionReconciler{
+		if err := (&controllerscertificate.CertificateReconciler{
 			Client:           mgr.GetClient(),
-			Log:              ctrl.Log.WithName("controllers").WithName("Session"),
+			Log:              ctrl.Log.WithName("controllers").WithName("Certificate"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
 			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["metal_bgp_session"],
-			TypeName:         "metal_bgp_session",
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_certificate"],
+			TypeName:         "hcloud_certificate",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Session")
+			setupLog.Error(err, "unable to create controller", "controller", "Certificate")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "connection.hcloud.kubeform.com",
+		Group:   "firewall.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "Connection",
+		Kind:    "Firewall",
 	}:
-		if err := (&controllersconnection.ConnectionReconciler{
+		if err := (&controllersfirewall.FirewallReconciler{
 			Client:           mgr.GetClient(),
-			Log:              ctrl.Log.WithName("controllers").WithName("Connection"),
+			Log:              ctrl.Log.WithName("controllers").WithName("Firewall"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
 			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["metal_connection"],
-			TypeName:         "metal_connection",
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_firewall"],
+			TypeName:         "hcloud_firewall",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Connection")
+			setupLog.Error(err, "unable to create controller", "controller", "Firewall")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "device.hcloud.kubeform.com",
+		Group:   "floating.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "Device",
+		Kind:    "Ip",
 	}:
-		if err := (&controllersdevice.DeviceReconciler{
+		if err := (&controllersfloating.IpReconciler{
 			Client:           mgr.GetClient(),
-			Log:              ctrl.Log.WithName("controllers").WithName("Device"),
+			Log:              ctrl.Log.WithName("controllers").WithName("Ip"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
 			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["metal_device"],
-			TypeName:         "metal_device",
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_floating_ip"],
+			TypeName:         "hcloud_floating_ip",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Device")
+			setupLog.Error(err, "unable to create controller", "controller", "Ip")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "device.hcloud.kubeform.com",
+		Group:   "floating.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "NetworkType",
+		Kind:    "IpAssignment",
 	}:
-		if err := (&controllersdevice.NetworkTypeReconciler{
+		if err := (&controllersfloating.IpAssignmentReconciler{
 			Client:           mgr.GetClient(),
-			Log:              ctrl.Log.WithName("controllers").WithName("NetworkType"),
+			Log:              ctrl.Log.WithName("controllers").WithName("IpAssignment"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
 			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["metal_device_network_type"],
-			TypeName:         "metal_device_network_type",
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_floating_ip_assignment"],
+			TypeName:         "hcloud_floating_ip_assignment",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "NetworkType")
+			setupLog.Error(err, "unable to create controller", "controller", "IpAssignment")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "gateway.hcloud.kubeform.com",
+		Group:   "load.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "Gateway",
+		Kind:    "Balancer",
 	}:
-		if err := (&controllersgateway.GatewayReconciler{
+		if err := (&controllersload.BalancerReconciler{
 			Client:           mgr.GetClient(),
-			Log:              ctrl.Log.WithName("controllers").WithName("Gateway"),
+			Log:              ctrl.Log.WithName("controllers").WithName("Balancer"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
 			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["metal_gateway"],
-			TypeName:         "metal_gateway",
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_load_balancer"],
+			TypeName:         "hcloud_load_balancer",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Gateway")
+			setupLog.Error(err, "unable to create controller", "controller", "Balancer")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "ip.hcloud.kubeform.com",
+		Group:   "load.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "Attachment",
+		Kind:    "BalancerNetwork",
 	}:
-		if err := (&controllersip.AttachmentReconciler{
+		if err := (&controllersload.BalancerNetworkReconciler{
 			Client:           mgr.GetClient(),
-			Log:              ctrl.Log.WithName("controllers").WithName("Attachment"),
+			Log:              ctrl.Log.WithName("controllers").WithName("BalancerNetwork"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
 			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["metal_ip_attachment"],
-			TypeName:         "metal_ip_attachment",
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_load_balancer_network"],
+			TypeName:         "hcloud_load_balancer_network",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Attachment")
+			setupLog.Error(err, "unable to create controller", "controller", "BalancerNetwork")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "organization.hcloud.kubeform.com",
+		Group:   "load.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "Organization",
+		Kind:    "BalancerService",
 	}:
-		if err := (&controllersorganization.OrganizationReconciler{
+		if err := (&controllersload.BalancerServiceReconciler{
 			Client:           mgr.GetClient(),
-			Log:              ctrl.Log.WithName("controllers").WithName("Organization"),
+			Log:              ctrl.Log.WithName("controllers").WithName("BalancerService"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
 			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["metal_organization"],
-			TypeName:         "metal_organization",
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_load_balancer_service"],
+			TypeName:         "hcloud_load_balancer_service",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Organization")
+			setupLog.Error(err, "unable to create controller", "controller", "BalancerService")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "port.hcloud.kubeform.com",
+		Group:   "load.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "VlanAttachment",
+		Kind:    "BalancerTarget",
 	}:
-		if err := (&controllersport.VlanAttachmentReconciler{
+		if err := (&controllersload.BalancerTargetReconciler{
 			Client:           mgr.GetClient(),
-			Log:              ctrl.Log.WithName("controllers").WithName("VlanAttachment"),
+			Log:              ctrl.Log.WithName("controllers").WithName("BalancerTarget"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
 			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["metal_port_vlan_attachment"],
-			TypeName:         "metal_port_vlan_attachment",
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_load_balancer_target"],
+			TypeName:         "hcloud_load_balancer_target",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "VlanAttachment")
+			setupLog.Error(err, "unable to create controller", "controller", "BalancerTarget")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "project.hcloud.kubeform.com",
+		Group:   "managed.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "Project",
+		Kind:    "Certificate",
 	}:
-		if err := (&controllersproject.ProjectReconciler{
+		if err := (&controllersmanaged.CertificateReconciler{
 			Client:           mgr.GetClient(),
-			Log:              ctrl.Log.WithName("controllers").WithName("Project"),
+			Log:              ctrl.Log.WithName("controllers").WithName("Certificate"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
 			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["metal_project"],
-			TypeName:         "metal_project",
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_managed_certificate"],
+			TypeName:         "hcloud_managed_certificate",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Project")
+			setupLog.Error(err, "unable to create controller", "controller", "Certificate")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "project.hcloud.kubeform.com",
+		Group:   "network.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "ApiKey",
+		Kind:    "Network",
 	}:
-		if err := (&controllersproject.ApiKeyReconciler{
+		if err := (&controllersnetwork.NetworkReconciler{
 			Client:           mgr.GetClient(),
-			Log:              ctrl.Log.WithName("controllers").WithName("ApiKey"),
+			Log:              ctrl.Log.WithName("controllers").WithName("Network"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
 			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["metal_project_api_key"],
-			TypeName:         "metal_project_api_key",
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_network"],
+			TypeName:         "hcloud_network",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "ApiKey")
+			setupLog.Error(err, "unable to create controller", "controller", "Network")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "project.hcloud.kubeform.com",
+		Group:   "network.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "SshKey",
+		Kind:    "Route",
 	}:
-		if err := (&controllersproject.SshKeyReconciler{
+		if err := (&controllersnetwork.RouteReconciler{
 			Client:           mgr.GetClient(),
-			Log:              ctrl.Log.WithName("controllers").WithName("SshKey"),
+			Log:              ctrl.Log.WithName("controllers").WithName("Route"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
 			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["metal_project_ssh_key"],
-			TypeName:         "metal_project_ssh_key",
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_network_route"],
+			TypeName:         "hcloud_network_route",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "SshKey")
+			setupLog.Error(err, "unable to create controller", "controller", "Route")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "reserved.hcloud.kubeform.com",
+		Group:   "network.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "IpBlock",
+		Kind:    "Subnet",
 	}:
-		if err := (&controllersreserved.IpBlockReconciler{
+		if err := (&controllersnetwork.SubnetReconciler{
 			Client:           mgr.GetClient(),
-			Log:              ctrl.Log.WithName("controllers").WithName("IpBlock"),
+			Log:              ctrl.Log.WithName("controllers").WithName("Subnet"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
 			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["metal_reserved_ip_block"],
-			TypeName:         "metal_reserved_ip_block",
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_network_subnet"],
+			TypeName:         "hcloud_network_subnet",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "IpBlock")
+			setupLog.Error(err, "unable to create controller", "controller", "Subnet")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "spot.hcloud.kubeform.com",
+		Group:   "rdns.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "MarketRequest",
+		Kind:    "Rdns",
 	}:
-		if err := (&controllersspot.MarketRequestReconciler{
+		if err := (&controllersrdns.RdnsReconciler{
 			Client:           mgr.GetClient(),
-			Log:              ctrl.Log.WithName("controllers").WithName("MarketRequest"),
+			Log:              ctrl.Log.WithName("controllers").WithName("Rdns"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
 			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["metal_spot_market_request"],
-			TypeName:         "metal_spot_market_request",
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_rdns"],
+			TypeName:         "hcloud_rdns",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "MarketRequest")
+			setupLog.Error(err, "unable to create controller", "controller", "Rdns")
+			return err
+		}
+	case schema.GroupVersionKind{
+		Group:   "server.hcloud.kubeform.com",
+		Version: "v1alpha1",
+		Kind:    "Server",
+	}:
+		if err := (&controllersserver.ServerReconciler{
+			Client:           mgr.GetClient(),
+			Log:              ctrl.Log.WithName("controllers").WithName("Server"),
+			Scheme:           mgr.GetScheme(),
+			Gvk:              gvk,
+			Provider:         hcloud.Provider(),
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_server"],
+			TypeName:         "hcloud_server",
+			WatchOnlyDefault: watchOnlyDefault,
+		}).SetupWithManager(ctx, mgr, auditor); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "Server")
+			return err
+		}
+	case schema.GroupVersionKind{
+		Group:   "server.hcloud.kubeform.com",
+		Version: "v1alpha1",
+		Kind:    "Network",
+	}:
+		if err := (&controllersserver.NetworkReconciler{
+			Client:           mgr.GetClient(),
+			Log:              ctrl.Log.WithName("controllers").WithName("Network"),
+			Scheme:           mgr.GetScheme(),
+			Gvk:              gvk,
+			Provider:         hcloud.Provider(),
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_server_network"],
+			TypeName:         "hcloud_server_network",
+			WatchOnlyDefault: watchOnlyDefault,
+		}).SetupWithManager(ctx, mgr, auditor); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "Network")
+			return err
+		}
+	case schema.GroupVersionKind{
+		Group:   "snapshot.hcloud.kubeform.com",
+		Version: "v1alpha1",
+		Kind:    "Snapshot",
+	}:
+		if err := (&controllerssnapshot.SnapshotReconciler{
+			Client:           mgr.GetClient(),
+			Log:              ctrl.Log.WithName("controllers").WithName("Snapshot"),
+			Scheme:           mgr.GetScheme(),
+			Gvk:              gvk,
+			Provider:         hcloud.Provider(),
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_snapshot"],
+			TypeName:         "hcloud_snapshot",
+			WatchOnlyDefault: watchOnlyDefault,
+		}).SetupWithManager(ctx, mgr, auditor); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "Snapshot")
 			return err
 		}
 	case schema.GroupVersionKind{
@@ -497,65 +545,29 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
 			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["metal_ssh_key"],
-			TypeName:         "metal_ssh_key",
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_ssh_key"],
+			TypeName:         "hcloud_ssh_key",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Key")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "user.hcloud.kubeform.com",
+		Group:   "uploaded.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "ApiKey",
+		Kind:    "Certificate",
 	}:
-		if err := (&controllersuser.ApiKeyReconciler{
+		if err := (&controllersuploaded.CertificateReconciler{
 			Client:           mgr.GetClient(),
-			Log:              ctrl.Log.WithName("controllers").WithName("ApiKey"),
+			Log:              ctrl.Log.WithName("controllers").WithName("Certificate"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
 			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["metal_user_api_key"],
-			TypeName:         "metal_user_api_key",
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_uploaded_certificate"],
+			TypeName:         "hcloud_uploaded_certificate",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "ApiKey")
-			return err
-		}
-	case schema.GroupVersionKind{
-		Group:   "virtual.hcloud.kubeform.com",
-		Version: "v1alpha1",
-		Kind:    "Circuit",
-	}:
-		if err := (&controllersvirtual.CircuitReconciler{
-			Client:           mgr.GetClient(),
-			Log:              ctrl.Log.WithName("controllers").WithName("Circuit"),
-			Scheme:           mgr.GetScheme(),
-			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["metal_virtual_circuit"],
-			TypeName:         "metal_virtual_circuit",
-			WatchOnlyDefault: watchOnlyDefault,
-		}).SetupWithManager(ctx, mgr, auditor); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Circuit")
-			return err
-		}
-	case schema.GroupVersionKind{
-		Group:   "vlan.hcloud.kubeform.com",
-		Version: "v1alpha1",
-		Kind:    "Vlan",
-	}:
-		if err := (&controllersvlan.VlanReconciler{
-			Client:           mgr.GetClient(),
-			Log:              ctrl.Log.WithName("controllers").WithName("Vlan"),
-			Scheme:           mgr.GetScheme(),
-			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["metal_vlan"],
-			TypeName:         "metal_vlan",
-			WatchOnlyDefault: watchOnlyDefault,
-		}).SetupWithManager(ctx, mgr, auditor); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Vlan")
+			setupLog.Error(err, "unable to create controller", "controller", "Certificate")
 			return err
 		}
 	case schema.GroupVersionKind{
@@ -569,8 +581,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
 			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["metal_volume"],
-			TypeName:         "metal_volume",
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_volume"],
+			TypeName:         "hcloud_volume",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Volume")
@@ -587,8 +599,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
 			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["metal_volume_attachment"],
-			TypeName:         "metal_volume_attachment",
+			Resource:         hcloud.Provider().ResourcesMap["hcloud_volume_attachment"],
+			TypeName:         "hcloud_volume_attachment",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Attachment")
@@ -605,120 +617,147 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 func SetupWebhook(mgr manager.Manager, gvk schema.GroupVersionKind) error {
 	switch gvk {
 	case schema.GroupVersionKind{
-		Group:   "bgp.hcloud.kubeform.com",
+		Group:   "certificate.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "Session",
+		Kind:    "Certificate",
 	}:
-		if err := (&bgpv1alpha1.Session{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Session")
+		if err := (&certificatev1alpha1.Certificate{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Certificate")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "connection.hcloud.kubeform.com",
+		Group:   "firewall.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "Connection",
+		Kind:    "Firewall",
 	}:
-		if err := (&connectionv1alpha1.Connection{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Connection")
+		if err := (&firewallv1alpha1.Firewall{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Firewall")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "device.hcloud.kubeform.com",
+		Group:   "floating.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "Device",
+		Kind:    "Ip",
 	}:
-		if err := (&devicev1alpha1.Device{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Device")
+		if err := (&floatingv1alpha1.Ip{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Ip")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "device.hcloud.kubeform.com",
+		Group:   "floating.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "NetworkType",
+		Kind:    "IpAssignment",
 	}:
-		if err := (&devicev1alpha1.NetworkType{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "NetworkType")
+		if err := (&floatingv1alpha1.IpAssignment{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "IpAssignment")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "gateway.hcloud.kubeform.com",
+		Group:   "load.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "Gateway",
+		Kind:    "Balancer",
 	}:
-		if err := (&gatewayv1alpha1.Gateway{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Gateway")
+		if err := (&loadv1alpha1.Balancer{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Balancer")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "ip.hcloud.kubeform.com",
+		Group:   "load.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "Attachment",
+		Kind:    "BalancerNetwork",
 	}:
-		if err := (&ipv1alpha1.Attachment{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Attachment")
+		if err := (&loadv1alpha1.BalancerNetwork{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "BalancerNetwork")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "organization.hcloud.kubeform.com",
+		Group:   "load.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "Organization",
+		Kind:    "BalancerService",
 	}:
-		if err := (&organizationv1alpha1.Organization{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Organization")
+		if err := (&loadv1alpha1.BalancerService{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "BalancerService")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "port.hcloud.kubeform.com",
+		Group:   "load.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "VlanAttachment",
+		Kind:    "BalancerTarget",
 	}:
-		if err := (&portv1alpha1.VlanAttachment{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "VlanAttachment")
+		if err := (&loadv1alpha1.BalancerTarget{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "BalancerTarget")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "project.hcloud.kubeform.com",
+		Group:   "managed.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "Project",
+		Kind:    "Certificate",
 	}:
-		if err := (&projectv1alpha1.Project{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Project")
+		if err := (&managedv1alpha1.Certificate{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Certificate")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "project.hcloud.kubeform.com",
+		Group:   "network.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "ApiKey",
+		Kind:    "Network",
 	}:
-		if err := (&projectv1alpha1.ApiKey{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "ApiKey")
+		if err := (&networkv1alpha1.Network{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Network")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "project.hcloud.kubeform.com",
+		Group:   "network.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "SshKey",
+		Kind:    "Route",
 	}:
-		if err := (&projectv1alpha1.SshKey{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "SshKey")
+		if err := (&networkv1alpha1.Route{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Route")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "reserved.hcloud.kubeform.com",
+		Group:   "network.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "IpBlock",
+		Kind:    "Subnet",
 	}:
-		if err := (&reservedv1alpha1.IpBlock{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "IpBlock")
+		if err := (&networkv1alpha1.Subnet{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Subnet")
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "spot.hcloud.kubeform.com",
+		Group:   "rdns.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "MarketRequest",
+		Kind:    "Rdns",
 	}:
-		if err := (&spotv1alpha1.MarketRequest{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "MarketRequest")
+		if err := (&rdnsv1alpha1.Rdns{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Rdns")
+			return err
+		}
+	case schema.GroupVersionKind{
+		Group:   "server.hcloud.kubeform.com",
+		Version: "v1alpha1",
+		Kind:    "Server",
+	}:
+		if err := (&serverv1alpha1.Server{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Server")
+			return err
+		}
+	case schema.GroupVersionKind{
+		Group:   "server.hcloud.kubeform.com",
+		Version: "v1alpha1",
+		Kind:    "Network",
+	}:
+		if err := (&serverv1alpha1.Network{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Network")
+			return err
+		}
+	case schema.GroupVersionKind{
+		Group:   "snapshot.hcloud.kubeform.com",
+		Version: "v1alpha1",
+		Kind:    "Snapshot",
+	}:
+		if err := (&snapshotv1alpha1.Snapshot{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Snapshot")
 			return err
 		}
 	case schema.GroupVersionKind{
@@ -731,30 +770,12 @@ func SetupWebhook(mgr manager.Manager, gvk schema.GroupVersionKind) error {
 			return err
 		}
 	case schema.GroupVersionKind{
-		Group:   "user.hcloud.kubeform.com",
+		Group:   "uploaded.hcloud.kubeform.com",
 		Version: "v1alpha1",
-		Kind:    "ApiKey",
+		Kind:    "Certificate",
 	}:
-		if err := (&userv1alpha1.ApiKey{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "ApiKey")
-			return err
-		}
-	case schema.GroupVersionKind{
-		Group:   "virtual.hcloud.kubeform.com",
-		Version: "v1alpha1",
-		Kind:    "Circuit",
-	}:
-		if err := (&virtualv1alpha1.Circuit{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Circuit")
-			return err
-		}
-	case schema.GroupVersionKind{
-		Group:   "vlan.hcloud.kubeform.com",
-		Version: "v1alpha1",
-		Kind:    "Vlan",
-	}:
-		if err := (&vlanv1alpha1.Vlan{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Vlan")
+		if err := (&uploadedv1alpha1.Certificate{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Certificate")
 			return err
 		}
 	case schema.GroupVersionKind{
