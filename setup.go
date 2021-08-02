@@ -67,6 +67,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
+var _provider = hcloud.Provider()
+
 var runningControllers = struct {
 	sync.RWMutex
 	mp map[schema.GroupVersionKind]bool
@@ -256,8 +258,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("Certificate"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_certificate"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_certificate"],
 			TypeName:         "hcloud_certificate",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
@@ -274,8 +276,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("Firewall"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_firewall"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_firewall"],
 			TypeName:         "hcloud_firewall",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
@@ -292,8 +294,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("Ip"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_floating_ip"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_floating_ip"],
 			TypeName:         "hcloud_floating_ip",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
@@ -310,8 +312,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("IpAssignment"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_floating_ip_assignment"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_floating_ip_assignment"],
 			TypeName:         "hcloud_floating_ip_assignment",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
@@ -328,8 +330,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("Balancer"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_load_balancer"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_load_balancer"],
 			TypeName:         "hcloud_load_balancer",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
@@ -346,8 +348,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("BalancerNetwork"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_load_balancer_network"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_load_balancer_network"],
 			TypeName:         "hcloud_load_balancer_network",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
@@ -364,8 +366,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("BalancerService"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_load_balancer_service"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_load_balancer_service"],
 			TypeName:         "hcloud_load_balancer_service",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
@@ -382,8 +384,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("BalancerTarget"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_load_balancer_target"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_load_balancer_target"],
 			TypeName:         "hcloud_load_balancer_target",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
@@ -400,8 +402,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("Certificate"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_managed_certificate"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_managed_certificate"],
 			TypeName:         "hcloud_managed_certificate",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
@@ -418,8 +420,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("Network"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_network"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_network"],
 			TypeName:         "hcloud_network",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
@@ -436,8 +438,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("Route"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_network_route"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_network_route"],
 			TypeName:         "hcloud_network_route",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
@@ -454,8 +456,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("Subnet"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_network_subnet"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_network_subnet"],
 			TypeName:         "hcloud_network_subnet",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
@@ -472,8 +474,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("Rdns"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_rdns"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_rdns"],
 			TypeName:         "hcloud_rdns",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
@@ -490,8 +492,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("Server"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_server"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_server"],
 			TypeName:         "hcloud_server",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
@@ -508,8 +510,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("Network"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_server_network"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_server_network"],
 			TypeName:         "hcloud_server_network",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
@@ -526,8 +528,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("Snapshot"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_snapshot"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_snapshot"],
 			TypeName:         "hcloud_snapshot",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
@@ -544,8 +546,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("Key"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_ssh_key"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_ssh_key"],
 			TypeName:         "hcloud_ssh_key",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
@@ -562,8 +564,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("Certificate"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_uploaded_certificate"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_uploaded_certificate"],
 			TypeName:         "hcloud_uploaded_certificate",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
@@ -580,8 +582,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("Volume"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_volume"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_volume"],
 			TypeName:         "hcloud_volume",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
@@ -598,8 +600,8 @@ func SetupManager(ctx context.Context, mgr manager.Manager, gvk schema.GroupVers
 			Log:              ctrl.Log.WithName("controllers").WithName("Attachment"),
 			Scheme:           mgr.GetScheme(),
 			Gvk:              gvk,
-			Provider:         hcloud.Provider(),
-			Resource:         hcloud.Provider().ResourcesMap["hcloud_volume_attachment"],
+			Provider:         _provider,
+			Resource:         _provider.ResourcesMap["hcloud_volume_attachment"],
 			TypeName:         "hcloud_volume_attachment",
 			WatchOnlyDefault: watchOnlyDefault,
 		}).SetupWithManager(ctx, mgr, auditor); err != nil {
