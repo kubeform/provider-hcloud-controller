@@ -3,7 +3,7 @@
 
 # provider-hcloud-controller
 
-Kubeform controller for [Terraform Hcloud Provider](https://github.com/equinix/terraform-provider-metal)
+Kubeform controller for [Terraform Hetzner Cloud Provider](https://github.com/hetznercloud/terraform-provider-hcloud)
 
 ## Installation
 
