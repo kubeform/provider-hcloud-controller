@@ -1326,7 +1326,7 @@ kmodules.xyz/resource-metrics/api
 ## explicit
 kubeform.dev/apimachinery/api/v1alpha1
 kubeform.dev/apimachinery/pkg/util
-# kubeform.dev/provider-hcloud-api v0.4.1-0.20220308115820-bbaf1cc8e681
+# kubeform.dev/provider-hcloud-api v0.4.1-0.20220317133450-3ff45b710330
 ## explicit
 kubeform.dev/provider-hcloud-api/api/provider
 kubeform.dev/provider-hcloud-api/apis/certificate
